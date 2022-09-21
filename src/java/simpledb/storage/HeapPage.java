@@ -5,6 +5,7 @@ import simpledb.common.DbException;
 import simpledb.common.Debug;
 import simpledb.common.Catalog;
 import simpledb.transaction.TransactionId;
+import simpledb.utils.BitUtil;
 
 import java.util.*;
 import java.io.*;
@@ -73,19 +74,16 @@ public class HeapPage implements Page {
     */
     private int getNumTuples() {        
         // some code goes here
-        return 0;
-
+        return (int) Math.floor(BufferPool.getPageSize() * 8.0 / (this.td.getSize() * 8.0 + 1));
     }
 
     /**
      * Computes the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      * @return the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      */
-    private int getHeaderSize() {        
-        
+    private int getHeaderSize() {
         // some code goes here
-        return 0;
-                 
+        return (int) Math.ceil(getNumTuples() / 8.0);
     }
     
     /** Return a view of this page before it was modified
@@ -117,8 +115,8 @@ public class HeapPage implements Page {
      * @return the PageId associated with this page.
      */
     public HeapPageId getId() {
-    // some code goes here
-    throw new UnsupportedOperationException("implement this");
+        // some code goes here
+        return this.pid;
     }
 
     /**
@@ -288,7 +286,11 @@ public class HeapPage implements Page {
      */
     public int getNumEmptySlots() {
         // some code goes here
-        return 0;
+        int cnt = 0;
+        for (byte b : this.header) {
+            cnt += BitUtil.calZeroInByte(b);
+        }
+        return cnt;
     }
 
     /**
@@ -296,7 +298,8 @@ public class HeapPage implements Page {
      */
     public boolean isSlotUsed(int i) {
         // some code goes here
-        return false;
+        byte b = this.header[i / 8];
+        return ((b >>> (byte)(i % 8)) & 1) == 1;
     }
 
     /**
@@ -313,7 +316,7 @@ public class HeapPage implements Page {
      */
     public Iterator<Tuple> iterator() {
         // some code goes here
-        return null;
+        return Arrays.stream(this.tuples).filter(Objects::nonNull).iterator();
     }
 
 }
