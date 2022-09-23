@@ -108,7 +108,7 @@ public class Tuple implements Serializable {
      */
     public String toString() {
         // some code goes here
-        return this.fields.stream().map(Field::toString).collect(Collectors.joining());
+        return this.fields.stream().map(Field::toString).collect(Collectors.joining("\t"));
     }
 
     /**
@@ -128,5 +128,17 @@ public class Tuple implements Serializable {
     {
         // some code goes here
         this.td = td;
+    }
+
+    public static Tuple merge(Tuple t1, Tuple t2) {
+        TupleDesc td = TupleDesc.merge(t1.getTupleDesc(), t2.getTupleDesc());
+        Tuple t = new Tuple(td);
+        for (int i = 0; i < t1.getTupleDesc().numFields(); i++) {
+            t.setField(i, t1.getField(i));
+        }
+        for (int i = 0; i < t2.getTupleDesc().numFields(); i++) {
+            t.setField(t1.getTupleDesc().numFields() + i, t2.getField(i));
+        }
+        return t;
     }
 }

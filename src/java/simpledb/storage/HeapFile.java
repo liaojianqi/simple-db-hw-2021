@@ -172,6 +172,7 @@ public class HeapFile implements DbFile {
 
             @Override
             public void rewind() throws DbException, TransactionAbortedException {
+                index = 0;
                 if (index < numPages()) {
                     PageId pid = new HeapPageId(getId(), this.index);
                     HeapPage page = (HeapPage) Database.getBufferPool().getPage(null, pid, null);
