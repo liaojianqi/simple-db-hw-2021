@@ -1,9 +1,17 @@
 package simpledb.execution;
 
+import simpledb.common.DbException;
+import simpledb.common.Type;
+import simpledb.storage.IntField;
+import simpledb.storage.StringField;
 import simpledb.storage.Tuple;
+import simpledb.storage.TupleDesc;
 import simpledb.storage.TupleIterator;
+import simpledb.transaction.TransactionAbortedException;
 
 import java.io.Serializable;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * The common interface for any class that can compute an aggregate over a
@@ -84,5 +92,90 @@ public interface Aggregator extends Serializable {
      * @see TupleIterator for a possible helper
      */
     OpIterator iterator();
-    
+
+    class AggregatorIterator extends Operator {
+      Map<String, Integer> aggreValues;
+      Map<String, Integer> aggreValues2;
+      private final int gbfield;
+      private final Type gbfieldtype;
+      private final Op what;
+      Iterator<String> it;
+
+      public AggregatorIterator(Map<String, Integer> aggreValues, Map<String, Integer> aggreValues2, int gbfield, Type gbfieldtype, Op what) {
+        this.aggreValues = aggreValues;
+        this.aggreValues2 = aggreValues2;
+        this.gbfield = gbfield;
+        this.gbfieldtype = gbfieldtype;
+        this.what = what;
+        it = aggreValues.keySet().iterator();
+      }
+
+      @Override
+      public void rewind() throws DbException, TransactionAbortedException {
+        close();
+        open();
+        it = aggreValues.keySet().iterator();
+      }
+
+      @Override
+      protected Tuple fetchNext() throws DbException, TransactionAbortedException {
+        if (!it.hasNext()) return null;
+        String key = it.next();
+        Tuple t = new Tuple(getTupleDesc());
+        if (gbfield != NO_GROUPING) {
+          if (gbfieldtype == Type.INT_TYPE) {
+            t.setField(0, new IntField(Integer.parseInt(key)));
+          } else {
+            t.setField(0, new StringField(key, 100));
+          }
+        }
+
+        int val;
+        if (what.equals(Op.AVG)) {
+          val = aggreValues.get(key) / aggreValues2.get(key);
+        } else {
+          val = aggreValues.get(key);
+        }
+        if (gbfield != NO_GROUPING) {
+          t.setField(1, new IntField(val));
+        } else {
+          t.setField(0, new IntField(val));
+        }
+        return t;
+      }
+
+      @Override
+      public OpIterator[] getChildren() {
+        try {
+          throw new Exception("not implemented");
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+
+      @Override
+      public void setChildren(OpIterator[] children) {
+        try {
+          throw new Exception("not implemented");
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+
+      @Override
+      public TupleDesc getTupleDesc() {
+        if (gbfield == NO_GROUPING) {
+          return new TupleDesc(
+              new Type[]{Type.INT_TYPE},
+              new String[]{"aggregateVal"}
+          );
+        }
+        return new TupleDesc(
+            new Type[]{gbfieldtype, Type.INT_TYPE},
+            new String[]{"groupVal", "aggregateVal"}
+        );
+      }
+  }
+
+
 }

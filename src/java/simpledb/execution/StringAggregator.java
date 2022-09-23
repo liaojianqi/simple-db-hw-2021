@@ -1,7 +1,17 @@
 package simpledb.execution;
 
+import simpledb.common.DbException;
 import simpledb.common.Type;
+import simpledb.storage.Field;
+import simpledb.storage.IntField;
+import simpledb.storage.StringField;
 import simpledb.storage.Tuple;
+import simpledb.storage.TupleDesc;
+import simpledb.transaction.TransactionAbortedException;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Knows how to compute some aggregate over a set of StringFields.
@@ -9,6 +19,13 @@ import simpledb.storage.Tuple;
 public class StringAggregator implements Aggregator {
 
     private static final long serialVersionUID = 1L;
+
+    private final int gbfield;
+    private final Type gbfieldtype;
+    private final int afield;
+    private final Op what;
+
+    Map<String, Integer> aggreValues;
 
     /**
      * Aggregate constructor
@@ -21,6 +38,14 @@ public class StringAggregator implements Aggregator {
 
     public StringAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
         // some code goes here
+        this.gbfield = gbfield;
+        this.gbfieldtype = gbfieldtype;
+        this.afield = afield;
+        this.what = what;
+        if (this.what != Op.COUNT) {
+            throw new IllegalArgumentException("only support COUNT");
+        }
+        this.aggreValues = new HashMap<>();
     }
 
     /**
@@ -29,6 +54,15 @@ public class StringAggregator implements Aggregator {
      */
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
+        Field gbField = gbfield == NO_GROUPING ? new StringField("NO_GROUPING", 100) : tup.getField(gbfield);
+        String key = gbField.toString();
+
+        if (!this.aggreValues.containsKey(key)) {
+            this.aggreValues.put(key, 1);
+            return ;
+        }
+        Integer curValue = this.aggreValues.get(key);
+        this.aggreValues.put(key, curValue + 1);
     }
 
     /**
@@ -41,7 +75,7 @@ public class StringAggregator implements Aggregator {
      */
     public OpIterator iterator() {
         // some code goes here
-        throw new UnsupportedOperationException("please implement me for lab2");
+        return new AggregatorIterator(aggreValues, null, gbfield, gbfieldtype, what);
     }
 
 }
