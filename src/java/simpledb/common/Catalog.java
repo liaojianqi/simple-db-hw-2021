@@ -60,6 +60,7 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
+        name2Id.put(name, file.getId());
         id2Table.put(file.getId(), new Table(file, name, pkeyField));
     }
 
