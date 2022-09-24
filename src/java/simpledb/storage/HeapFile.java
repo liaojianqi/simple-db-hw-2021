@@ -131,6 +131,7 @@ public class HeapFile implements DbFile {
             if (hp.getNumEmptySlots() != 0) {
                 hp.insertTuple(t);
                 writePage(hp);
+                hp.markDirty(false, tid);
                 return new ArrayList<>(Collections.singletonList(hp));
             }
         }
@@ -140,6 +141,7 @@ public class HeapFile implements DbFile {
             HeapPage.createEmptyPageData());
         hp.insertTuple(t);
         writePage(hp);
+        hp.markDirty(false, tid);
 
         return new ArrayList<>(Collections.singletonList(hp));
         // not necessary for lab1
@@ -158,6 +160,7 @@ public class HeapFile implements DbFile {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        hp.markDirty(false, tid);
 //        hp.markDirty(true, tid);
 
         return new ArrayList<>(Collections.singletonList(hp));

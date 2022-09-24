@@ -200,7 +200,15 @@ public class BufferPool {
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
         // not necessary for lab1
-
+        this.buffer.keySet().forEach(
+            key -> {
+                try {
+                    this.flushPage(key);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        );
     }
 
     /** Remove the specific page id from the buffer pool.
@@ -214,6 +222,7 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+        this.buffer.remove(pid);
     }
 
     /**
@@ -223,6 +232,12 @@ public class BufferPool {
     private synchronized  void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
+        Page p = this.buffer.get(pid);
+        if (p.isDirty() != null) {
+            DbFile dbFile = Database.getCatalog().getDatabaseFile(p.getId().getTableId());
+            dbFile.writePage(p);
+            p.markDirty(false, null);
+        }
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -239,12 +254,15 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
+        if (this.buffer.size() > 0) {
+            this.buffer.remove(this.buffer.keySet().stream().findAny().orElse(null));
+        }
     }
 
     private void addPage(Page p) {
         if (this.buffer.size() >= this.numPages) {
             try {
-                throw new DbException("buffer pool exceed!");
+                evictPage();
             } catch (DbException e) {
                 throw new RuntimeException(e);
             }
