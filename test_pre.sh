@@ -22,4 +22,5 @@ ant runsystest -Dtest=FilterTest &&
 ant runsystest -Dtest=JoinTest &&
 ant runsystest -Dtest=AggregateTest &&
 ant runsystest -Dtest=InsertTest &&
-ant runsystest -Dtest=DeleteTest
+ant runsystest -Dtest=DeleteTest &&
+ant runsystest -Dtest=EvictionTest
