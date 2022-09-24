@@ -11,6 +11,7 @@ import simpledb.transaction.TransactionId;
 import java.io.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -82,7 +83,7 @@ public class BufferPool {
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
-        if (this.buffer.containsKey(pid)) {
+        if (this.buffer.containsKey(pid) && this.buffer.get(pid).isDirty() == null) {
             return this.buffer.get(pid);
         }
 
@@ -163,6 +164,13 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+        DbFile dbFile = Database.getCatalog().getDatabaseFile(tableId);
+        List<Page> pages = dbFile.insertTuple(tid, t);
+        for (Page p: pages) {
+            if (p.isDirty() == null) continue;
+            dbFile.writePage(p);
+            this.addPage(p);
+        }
     }
 
     /**
@@ -182,6 +190,13 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+        DbFile dbFile = Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId());
+        List<Page> pages = dbFile.deleteTuple(tid, t);
+        for (Page p: pages) {
+            if (p.isDirty() == null) continue;
+            dbFile.writePage(p);
+            this.addPage(p);
+        }
     }
 
     /**
@@ -231,6 +246,17 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
+    }
+
+    private void addPage(Page p) {
+        if (this.buffer.size() >= this.numPages) {
+            try {
+                throw new DbException("buffer pool exceed!");
+            } catch (DbException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        this.buffer.put(p.getId(), p);
     }
 
 }
