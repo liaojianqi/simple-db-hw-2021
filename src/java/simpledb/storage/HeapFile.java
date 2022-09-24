@@ -25,7 +25,6 @@ public class HeapFile implements DbFile {
     private File f;
     private TupleDesc td;
 
-//    int numPage;
 
     /**
      * Constructs a heap file backed by the specified file.

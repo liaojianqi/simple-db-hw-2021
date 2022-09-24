@@ -10,6 +10,7 @@ import simpledb.utils.BitUtil;
 
 import java.util.*;
 import java.io.*;
+import java.util.stream.Stream;
 
 /**
  * Each instance of HeapPage stores data for one page of HeapFiles and 
@@ -25,7 +26,6 @@ public class HeapPage implements Page {
     final TupleDesc td;
     final byte[] header;
     final Tuple[] tuples;
-    final int numSlots;
 
     boolean dirty = false;
     TransactionId lastDirtied = null;
@@ -52,7 +52,6 @@ public class HeapPage implements Page {
     public HeapPage(HeapPageId id, byte[] data) throws IOException {
         this.pid = id;
         this.td = Database.getCatalog().getTupleDesc(id.getTableId());
-        this.numSlots = getNumTuples();
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
 
         // allocate and read the header slots of this page
@@ -60,7 +59,7 @@ public class HeapPage implements Page {
         for (int i=0; i<header.length; i++)
             header[i] = dis.readByte();
         
-        tuples = new Tuple[numSlots];
+        tuples = new Tuple[getNumTuples()];
         try{
             // allocate and read the actual records of this page
             for (int i=0; i<tuples.length; i++)
@@ -360,7 +359,14 @@ public class HeapPage implements Page {
      */
     public Iterator<Tuple> iterator() {
         // some code goes here
-        return Arrays.stream(this.tuples).filter(Objects::nonNull).iterator();
+        List<Tuple> res = new ArrayList<>();
+        for (int i = 0; i < getNumTuples(); i++) {
+            if (isSlotUsed(i)) {
+                res.add(this.tuples[i]);
+            }
+        }
+
+        return res.iterator();
     }
 
 }

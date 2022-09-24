@@ -83,7 +83,7 @@ public class BufferPool {
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
-        if (this.buffer.containsKey(pid) && this.buffer.get(pid).isDirty() == null) {
+        if (this.buffer.containsKey(pid)) {
             return this.buffer.get(pid);
         }
 
@@ -95,10 +95,7 @@ public class BufferPool {
             throw new RuntimeException(e);
         }
 
-        if (this.buffer.size() >= this.numPages) {
-            throw new DbException("buffer pool exceed!");
-        }
-        this.buffer.put(pid, p);
+        addPage(p);
         return p;
     }
 
@@ -167,8 +164,6 @@ public class BufferPool {
         DbFile dbFile = Database.getCatalog().getDatabaseFile(tableId);
         List<Page> pages = dbFile.insertTuple(tid, t);
         for (Page p: pages) {
-            if (p.isDirty() == null) continue;
-            dbFile.writePage(p);
             this.addPage(p);
         }
     }
@@ -193,8 +188,6 @@ public class BufferPool {
         DbFile dbFile = Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId());
         List<Page> pages = dbFile.deleteTuple(tid, t);
         for (Page p: pages) {
-            if (p.isDirty() == null) continue;
-            dbFile.writePage(p);
             this.addPage(p);
         }
     }
