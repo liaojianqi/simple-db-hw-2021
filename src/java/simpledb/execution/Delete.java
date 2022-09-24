@@ -11,6 +11,9 @@ import simpledb.transaction.TransactionAbortedException;
 import simpledb.transaction.TransactionId;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * The delete operator. Delete reads tuples from its child operator and removes
@@ -19,6 +22,12 @@ import java.io.IOException;
 public class Delete extends Operator {
 
     private static final long serialVersionUID = 1L;
+
+    private TransactionId t;
+    private OpIterator child;
+
+    private List<Tuple> affected;
+    Iterator<Tuple> it = null;
 
     /**
      * Constructor specifying the transaction that this delete belongs to as
@@ -31,23 +40,37 @@ public class Delete extends Operator {
      */
     public Delete(TransactionId t, OpIterator child) {
         // some code goes here
+        this.t = t;
+        this.child = child;
+
+        try {
+            doDelete();
+        } catch (TransactionAbortedException | IOException | DbException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        return new TupleDesc(new Type[]{Type.INT_TYPE});
     }
 
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
+        this.it = affected.iterator();
+        super.open();
     }
 
     public void close() {
         // some code goes here
+        this.it = null;
+        super.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
+        close();
+        open();
     }
 
     /**
@@ -61,18 +84,44 @@ public class Delete extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        return null;
+        if (!this.it.hasNext()) {
+            return null;
+        }
+        return this.it.next();
     }
 
     @Override
     public OpIterator[] getChildren() {
         // some code goes here
-        return null;
+        return new OpIterator[]{this.child};
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
         // some code goes here
+        // some code goes here
+        if (children.length < 1) {
+            try {
+                throw new Exception("children size too small");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        this.child = children[0];
+    }
+
+    private void doDelete() throws TransactionAbortedException, DbException, IOException {
+        int count = 0;
+        child.open();
+        while (child.hasNext()) {
+            Database.getBufferPool().deleteTuple(t, child.next());
+            count++;
+        }
+        child.close();
+
+        Tuple t = new Tuple(getTupleDesc());
+        t.setField(0, new IntField(count));
+        affected = Collections.singletonList(t);
     }
 
 }
