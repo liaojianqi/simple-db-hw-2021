@@ -16,6 +16,8 @@ ant runtest -Dtest=HeapPageWriteTest &&
 ant runtest -Dtest=HeapFileWriteTest &&
 ant runtest -Dtest=BufferPoolWriteTest &&
 ant runtest -Dtest=InsertTest &&
+ant runtest -Dtest=IntHistogramTest &&
+ant runtest -Dtest=TableStatsTest &&
 
 ant runsystest -Dtest=ScanTest &&
 ant runsystest -Dtest=FilterTest &&

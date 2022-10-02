@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 /** A class to represent a fixed-width histogram over a single integer-based field.
  */
-public class IntHistogram {
+public class IntHistogram implements Histogram {
     List<Integer> bucketList;
     int width;
     int min;
@@ -96,6 +96,9 @@ public class IntHistogram {
     }
 
     private double estimateSelectivity_Equals(int v) {
+        if (v < min || v > max) {
+            return 0;
+        }
         int index = (v - min) / width;
         int h = this.bucketList.get(index);
 
